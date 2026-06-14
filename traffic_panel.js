@@ -1,28 +1,43 @@
-// traffic_panel.js - 终极强制日志版
-$task.fetch({
-    url: "https://api.64clouds.com/v1/getServiceInfo?veid=" + ($argument.match(/veid1=([^&]+)/) ? $argument.match(/veid1=([^&]+)/)[1] : "") + "&api_key=" + ($argument.match(/key1=([^&]+)/) ? $argument.match(/key1=([^&]+)/)[1] : ""),
-    method: "GET",
-    policy: "DIRECT"
-}).then(response => {
-    console.log("Response Status: " + response.status);
-    console.log("Response Body: " + response.body);
-    
-    let data = JSON.parse(response.body);
-    let used = (data.data_counter / 1073741824).toFixed(2);
-    let total = (data.plan_monthly_data / 1073741824).toFixed(2);
-    
-    $done({
-        title: "🚀 VPS 流量统计",
-        content: "流量: " + used + " / " + total + " GB",
-        icon: "airplane.circle.fill",
-        "icon-color": "#5DADE2"
+// traffic_panel.js - Surge 官方稳定版 (无协程依赖)
+let arg = $argument || "";
+let params = {};
+arg.split('&').forEach(item => {
+    let [k, v] = item.split('=');
+    if (k && v) params[k] = v;
+});
+
+function getTraffic(veid, key, callback) {
+    let url = "https://api.64clouds.com/v1/getServiceInfo?veid=" + veid + "&api_key=" + key;
+    $httpClient.get({ url: url, policy: "DIRECT" }, (error, response, data) => {
+        if (error) {
+            callback("连接超时");
+        } else if (response.status !== 200) {
+            callback("HTTP " + response.status);
+        } else {
+            try {
+                let json = JSON.parse(data);
+                if (json.error !== 0) {
+                    callback("API错误");
+                } else {
+                    let used = (json.data_counter / 1073741824).toFixed(2);
+                    let total = (json.plan_monthly_data / 1073741824).toFixed(2);
+                    callback(used + " / " + total + " GB");
+                }
+            } catch (e) {
+                callback("解析错误");
+            }
+        }
     });
-}, reason => {
-    console.log("Fetch Error: " + reason);
-    $done({
-        title: "🚀 VPS 流量统计",
-        content: "请求失败: " + reason,
-        icon: "xmark.octagon.fill",
-        "icon-color": "#D65C51"
+}
+
+// 嵌套调用，彻底避免 async/await 环境报错
+getTraffic(params.veid1, params.key1, function(res1) {
+    getTraffic(params.veid2, params.key2, function(res2) {
+        $done({
+            title: "🚀 VPS 流量统计",
+            content: "美国: " + res1 + "\n新加坡: " + res2,
+            icon: "airplane.circle.fill",
+            "icon-color": "#5DADE2"
+        });
     });
 });
