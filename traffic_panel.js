@@ -36,7 +36,7 @@ getTraffic(params.veid1, params.key1, function(res1) {
     getTraffic(params.veid2, params.key2, function(res2) {
         $done({
             title: "🚀 VPS 流量统计",
-            content: "美: " + res1 + "\n新: " + res2,
+            content: "BWG-US: " + res1 + "\nBWG-SG: " + res2,
             icon: "airplane.circle.fill",
             "icon-color": "#5DADE2"
         });
